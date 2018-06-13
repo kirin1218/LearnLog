@@ -1,7 +1,11 @@
 #-*- coding:utf-8 -*-
 import sys
 import os
-
+def char(charactor):
+    ret =  charactor[0]
+    print(ret,type(ret))
+    return ret
+    
 class csvManager:
     def __init__(self,path):
         self._path = path
@@ -11,13 +15,25 @@ class csvManager:
     
     def getline(self,start,linedata,maxidx):
         nextline = start+1
+        CR = char(b'\r')
+        LF = char(b'\n')
+        COMMA = char(b',')
         i = start
+        cells = []
+        stkbuf = '' 
         while i <= maxidx:
             data = self._raw[i]
-            if data == (b'\r')[0] or data == (b'\n')[0]:
-                i+=1
-                break
-            linedata.append(data)
+            if data == CR or data == LF:
+                cells.append(str(stkbuf))
+                stkbuf=''
+                while self._raw[i] == CR or self._raw[i] == LF:
+                    i+=1 
+                continue
+            elif data == COMMA:
+                cells.append(stkbuf.decode('shift-jis'))
+                stkbuf=''
+            else:
+                stkbuf += chr(data)
             i+=1
         nextline = i
         return nextline
@@ -25,9 +41,10 @@ class csvManager:
     
     def open(self):
         #size = os.path.getsize(self._path)
-        with open(self._path,"rb") as f:
+u        with open(self._path,"rb",'Shift_jis') as f:
             f.seek(0)
             self._raw = f.read()
+            print(self._raw)
             size = len(self._raw)
             i = 0
             while i < size:
