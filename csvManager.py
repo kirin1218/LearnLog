@@ -2,6 +2,7 @@
 import sys
 import os
 import codecs
+import json
 
    
 class csvManager:
@@ -26,7 +27,7 @@ class csvManager:
                     # ファイルの終端
                     if i + 1 >= length:
                         cells.append(stkbuf)
-                        break
+                        stkbuf=''
                     #ダブルクォートの終端
                     elif self._raw[i+1] == ',': 
                         cells.append(stkbuf)
@@ -53,10 +54,17 @@ class csvManager:
             else:
                 if len(stkbuf) == 0:
                     if data == '\"':
-                        dquat = True
-                        i+=1
-                        continue
-         
+                        if not i + 1 >= length:
+                            if self._raw[i+1] == '\"':
+                                if i + 2 >= length and self._raw[i+2] == '\"':
+                                    dquat = True
+                                else:
+                                    stkbuf += data
+                                    i+=1
+                            else:
+                                dquat = True
+                            i+=1
+                            continue
                 if (data == '\r' and self._raw[i+1] == '\n') or data == '\n':
                     cells.append(stkbuf)
                     stkbuf=''
@@ -85,9 +93,32 @@ class csvManager:
             self._raw = f.read()
             self.parse()
 
+    def tojson(self):
+        jsondata = {}
+        logs =[]
+        for log in self._rows:
+            logdata = {}
+            for i in range(len(log)):
+                cell = log[i]
+                #print(str(cell,'utf-8'))
+                test = cell.encode('utf-8').decode('utf-8')
+                print(cell.encode('utf-8'))
+                logdata[i] = cell
+            logs.append(logdata)
+        jsondata['logdata'] = logs
+        return jsondata
+
+
+
 if __name__ == '__main__':
     path = '.' + os.sep + 'Data' + os.sep + 'log.csv'
     csv = csvManager(path)
-
-
+    jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
+    jsondata = csv.tojson()
+    with codecs.open(jsonpath,"w",encoding='utf-8') as f:
+        json.dump(jsondata, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
+        #json.dump(jsondata,f,ensure_ascii=False)
     
+    with codecs.open(jsonpath,'r',encoding='utf-8') as f2:
+        jdata = json.load(f2)
+       
