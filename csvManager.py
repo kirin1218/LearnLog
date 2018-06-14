@@ -93,19 +93,16 @@ class csvManager:
             self._raw = f.read()
             self.parse()
 
-    def tojson(self):
+    def tojson(self,name):
         jsondata = {}
         logs =[]
         for log in self._rows:
             logdata = {}
             for i in range(len(log)):
                 cell = log[i]
-                #print(str(cell,'utf-8'))
-                test = cell.encode('utf-8').decode('utf-8')
-                print(cell.encode('utf-8'))
                 logdata[i] = cell
             logs.append(logdata)
-        jsondata['logdata'] = logs
+        jsondata[name] = logs
         return jsondata
 
 
@@ -119,6 +116,4 @@ if __name__ == '__main__':
         json.dump(jsondata, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
         #json.dump(jsondata,f,ensure_ascii=False)
     
-    with codecs.open(jsonpath,'r',encoding='utf-8') as f2:
-        jdata = json.load(f2)
-       
+      

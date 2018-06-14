@@ -2,12 +2,23 @@
 import sys
 import os
 import numpy as np
-import pandas as pd
 import csvManager as csv
+import json
+import codecs
+import sepJson as sj
+
+def outputJson(data,path):
+    with codecs.open(jsonpath,"w",encoding='utf-8') as f:
+        #json.dump(jsondata, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
+        json.dump(jsondata, f, ensure_ascii=False)
 
 if __name__ == '__main__':
     path = '.' + os.sep + 'Data' + os.sep + 'log.csv'
     csv = csv.csvManager(path)
-
-   #csv_input = pd.read_csv(filepath_or_buffer=path,encoding='utf-8',sep=',')
-    #print(type(csv_input))
+    #読み込んだCSVをJson形式に変換
+    jsondata = csv.tojson(name='logdata')
+    #Jsonファイルとして出力
+    jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
+    outputJson(jsondata,jsonpath)
+    #SeP/DeP履歴としてjsonファイルを読み込む
+    sepjson = sj.sepJson(raw=jsonpath)
