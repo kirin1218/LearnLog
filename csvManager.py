@@ -29,11 +29,11 @@ class csvManager:
                         cells.append(stkbuf)
                         stkbuf=''
                     #ダブルクォートの終端
-                    elif self._raw[i+1] == ',': 
-                        cells.append(stkbuf)
-                        stkbuf = ''
+                    elif self._raw[i+1] == ',' or self._raw[i+1] == '\r' or self._raw[i+1] == '\n': 
+                        #cells.append(stkbuf)
+                        #stkbuf = ''
                         dquat = False
-                        i+=1
+                        #i+=1
                     #ダブルクオートのエスケープ　まだ途中
                     elif self._raw[i+1] == '\"':
                         stkbuf += data
@@ -56,7 +56,10 @@ class csvManager:
                     if data == '\"':
                         if not i + 1 >= length:
                             if self._raw[i+1] == '\"':
-                                if i + 2 >= length and self._raw[i+2] == '\"':
+                                if i + 2 < length and (self._raw[i+2] == ',' or self._raw[i+2] == '\r' or self._raw[i+2] == '\n'):
+                                    #空のデータということ
+                                    i+=1
+                                elif i + 2 < length and self._raw[i+2] == '\"':
                                     dquat = True
                                 else:
                                     stkbuf += data
