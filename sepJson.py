@@ -2,19 +2,21 @@
 import json
 import codecs
 import os
+import logDictonary as ld
 import const
 
 class sepJson:
     const.NO_DATA = 0
     def __init__(self,path=None,raw=None):
         self._path = path
+        self._dict = ld.logDictonary()
         if self._path is None:
             if raw is not None:
                 self._logs = []
                 self._dictinary = {}
                 self._data = {}
                 self._data['logs'] = self._logs
-                self._data['dictinary'] = self._dictinary
+                self._data['dictinary'] = None
                 with codecs.open(raw,'r',encoding='utf-8') as f:
                     rawdata = json.load(f)
                     self.convert(rawdata)
@@ -22,7 +24,7 @@ class sepJson:
             with codecs.open(self._path,'r',encoding='utf-8') as f:
                 self._data = json.load(f)
                 self._logs = self._data['logs'] 
-                self._dictinary = self._data['dictinary'] 
+                self._dict.set(self._data['dictinary']) 
 
     def combine(words,connect):
         ret = ''
@@ -32,27 +34,7 @@ class sepJson:
             ret+=word
         return ret
     
-    def dictinalize(self, name, data ):
-        if not name in self._dictinary:
-            self._dictinary[name] = {}
-            self._dictinary[name]['names'] = {}
-            self._dictinary[name]['values'] = {}
-            #0番目はDummyデータとして欠番にする
-            self._dictinary[name]['names']['NO_DATA'] = 0
-            self._dictinary[name]['values'][0] = 'NO_DATA'
-
-        dict = self._dictinary[name]
-        names = dict['names']
-        values = dict['values']
-
-        if not data in names:
-            next = len(values) #0番目はDummyデータ
-            names[data] = next
-            values[next] = data
-            return next
-        else:
-            return names[data]
-
+    
     def dictinalizeOepName(self):
         for log in self._logs:
             ope = log['OpeName']
@@ -71,7 +53,7 @@ class sepJson:
                     s2.pop(0)
                     ope = self.combine(s2,'-')
             #文字列を数値化（辞書の作成）する
-            log['ope_no'] = self.dictinalize(name='OpeName',data=ope)
+            log['ope_no'] = self._dict.dictinalize(name='OpeName',data=ope)
 
     #csvから変換されただけのjsonファイルを解析用の形式に変換する
     def convert(self,rawdata):
@@ -107,9 +89,14 @@ class sepJson:
         self.dictinalizeOepName()
     
     def dump(self,path):
+        #辞書データを書き込みデータに代入する
+        self._data['dictinary'] = self._dict.get()
         with codecs.open(path,"w",encoding='utf-8') as f:
             json.dump(self._data, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
             #json.dump(jsondata,f,ensure_ascii=False)
+        #こっちを参照しないように初期化しておく
+        self._data['dictinary'] = None
+
 '''
     def isloadedraw(self):
         if self._rawdata is not None:
@@ -126,6 +113,6 @@ if __name__ == '__main__':
     #sepjson = sepJson(raw=jsonpath)
     logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
     #sepjson.dump(logjsonpath) 
-    sepjson = sepJson(path=logjsonpath)
+    #sepjson = sepJson(path=logjsonpath)
 
  
