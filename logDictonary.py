@@ -14,6 +14,13 @@ class logDictonary:
 
     def get(self):
         return self._dict
+
+    def getValue(self,key,name):
+        if key in self._dict:
+            if name in self._dict[key]['names']:
+                return self._dict[key]['names'][name]
+            return self._dict[key]['names']['NO_DATA']
+        return None
         
     def dictinalize(self, name, data ):
         if not name in self._dict:

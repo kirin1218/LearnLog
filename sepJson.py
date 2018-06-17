@@ -4,6 +4,7 @@ import codecs
 import os
 import logDictonary as ld
 import const
+import re
 
 class sepJson:
     const.NO_DATA = 0
@@ -11,12 +12,11 @@ class sepJson:
         self._path = path
         self._dict = ld.logDictonary()
         if self._path is None:
+            self._logs = []
+            self._data = {}
+            self._data['logs'] = self._logs
+            self._data['dictinary'] = None
             if raw is not None:
-                self._logs = []
-                self._dictinary = {}
-                self._data = {}
-                self._data['logs'] = self._logs
-                self._data['dictinary'] = None
                 with codecs.open(raw,'r',encoding='utf-8') as f:
                     rawdata = json.load(f)
                     self.convert(rawdata)
@@ -53,7 +53,7 @@ class sepJson:
                     s2.pop(0)
                     ope = self.combine(s2,'-')
             #文字列を数値化（辞書の作成）する
-            log['ope_no'] = self._dict.dictinalize(name='OpeName',data=ope)
+            log['OpeName_Dict'] = self._dict.dictinalize(name='OpeName',data=ope)
 
     #csvから変換されただけのjsonファイルを解析用の形式に変換する
     def convert(self,rawdata):
@@ -83,7 +83,7 @@ class sepJson:
             sepjson['ope_flag_deplog'] = False
             sepjson['ope_flag_depalertpanel']  = False
             sepjson['ope_flag_depdetect']  = False
-            sepjson['ope_no'] = const.NO_DATA
+            sepjson['OpeName_Dict'] = const.NO_DATA
             self._logs.append(sepjson)
         
         self.dictinalizeOepName()
@@ -97,6 +97,48 @@ class sepJson:
         #こっちを参照しないように初期化しておく
         self._data['dictinary'] = None
 
+    def filter(self,ItemName,ItemData,include=True):
+        newJson = sepJson()
+        first = True
+        dictval = const.NO_DATA
+        dictName = ''
+        for log in self._logs:
+            if first != False:
+                #検索対象のキーが存在するか
+                if not ItemName in log:
+                    print('sepjson not found item \'{0}\''.format(ItemName))
+                    return None
+                #辞書化したキーが存在するか
+                dictName = ItemName + '_Dict'
+                if dictName in log:
+                    dictval = self._dict.getValue(ItemName,ItemData)
+                    if dictval == const.NO_DATA:
+                        print('Exist dictinary Key:{0},but not exist value'.format(dictName))
+                        return None
+                first = False
+            if dictval != const.NO_DATA:
+                if log[dictName] == dictval: 
+                    if include == True:
+                        newJson._logs.append(log)
+                else:
+                    if include == False:
+                        newJson._logs.append(log)
+            else:
+                srchRet = re.search(ItemData,log[ItemName])
+                if not srchRet is None:
+                    if include == True:
+                        newJson._logs.append(log)
+                else:
+                    if include == False:
+                        newJson._logs.append(log)
+        if newJson.size() == 0:
+            print('filter not found match data,ItemName:{0},ItemData:{1}'.format(ItemName,ItemData))
+            return None
+        newJson._dict = self._dict
+        return newJson
+
+    def size(self):
+        return len(self._logs)
 '''
     def isloadedraw(self):
         if self._rawdata is not None:
@@ -109,10 +151,12 @@ class sepJson:
             print('don\'t loaded raw file')
 '''
 if __name__ == '__main__':
-    #jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
-    #sepjson = sepJson(raw=jsonpath)
-    logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
+    jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
+    sepjson = sepJson(raw=jsonpath)
+    #logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
     #sepjson.dump(logjsonpath) 
     #sepjson = sepJson(path=logjsonpath)
+    #filecopylog = sepjson.filter(ItemName='OpeName',ItemData='ファイルコピー',include=True)
+    #filecopylog = sepjson.filter(ItemName='AppName',ItemData='svchost',include=True)
 
  
