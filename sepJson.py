@@ -55,10 +55,12 @@ class sepJson:
         if len(s2) > 1:
             #まずは先頭についているパターンを判定
             if s2[0] == '拒否':
-                log['ope_flag_deny'] = True
+                extention['ope_flag_deny'] = True
                 print('detect deny flag{0}'.format(ope))
                 s2.pop(0)
                 ope = self.combine(s2,'-')
+
+
         #文字列を数値化（辞書の作成）する
         log['OpeName_Dict'] = self._dict.dictinalize(name='OpeName',data=ope)
 
