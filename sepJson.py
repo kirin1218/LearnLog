@@ -37,53 +37,75 @@ class sepJson:
     
     def dictinalizeOepName(self):
         for log in self._logs:
-            ope = log['OpeName']
-            s1 = ope.split('<')
-            #SePインストール<Version 3.6.42.1>の<以降は不要なためいったん削除（使う時がきたら考える）
-            if len(s1) > 1:
-                print('delete a part of opename,{0},delstring:<{1}'.format( ope, s1[1]))
-                ope = s1[0]
-            #拒否-印刷やファイル書き込み(DeP)-警告パネルなどちょくちょく出てくる
-            s2 = ope.split('-')
-            if len(s2) > 1:
-                #まずは先頭についているパターンを判定
-                if s2[0] == '拒否':
-                    log['ope_flag_deny'] = True
-                    print('detect deny flag{0}'.format(ope))
-                    s2.pop(0)
-                    ope = self.combine(s2,'-')
-            #文字列を数値化（辞書の作成）する
-            log['OpeName_Dict'] = self._dict.dictinalize(name='OpeName',data=ope)
+            
+    def parseExtention(self,raw):
+        extention = {}
+        #まずは操作名
+        ope = raw['6']
+        s1 = ope.split('<')
+        #SePインストール<Version 3.6.42.1>の<以降は不要なためいったん削除（使う時がきたら考える）
+        if len(s1) > 1:
+            print('delete a part of opename,{0},delstring:<{1}'.format( ope, s1[1]))
+            ope = s1[0]
+            ver = s1[1].split('>')[0]
+            extention['sepinst_ver'] = ver
 
+        #拒否-印刷やファイル書き込み(DeP)-警告パネルなどちょくちょく出てくる
+        s2 = ope.split('-')
+        if len(s2) > 1:
+            #まずは先頭についているパターンを判定
+            if s2[0] == '拒否':
+                log['ope_flag_deny'] = True
+                print('detect deny flag{0}'.format(ope))
+                s2.pop(0)
+                ope = self.combine(s2,'-')
+        #文字列を数値化（辞書の作成）する
+        log['OpeName_Dict'] = self._dict.dictinalize(name='OpeName',data=ope)
+
+    def parseLogdata(self,raw):
+        common = {}
+        extention = {}
+        common['PCName'] = raw['1']
+        common['AppName'] = raw['4']
+        common['UserName'] = raw['7']
+        common['date'] = raw['8']    
+
+        common['OpeName'],extention = self.parseExtention(raw)
     #csvから変換されただけのjsonファイルを解析用の形式に変換する
     def convert(self,rawdata):
         lines = rawdata['logdata']
         for line in lines:
+            raw = {}
             sepjson = {}
             #0:PC名
-            sepjson['PCName'] = line['0']
+            raw['1'] = line['0']
             #1:ファイル名
-            sepjson['2'] = line['1']
+            raw['2'] = line['1']
             #2:フォルダパス
-            sepjson['3'] = line['2']
+            raw['3'] = line['2']
             #3:アプリ名
-            sepjson['AppName'] = line['3']
+            raw['4'] = line['3']
             #4:ウィンドウ名
-            sepjson['5'] = line['4']
+            raw['5'] = line['4']
             #5:操作名
-            sepjson['OpeName'] = line['5']
+            raw['6'] = line['5']
             #6:ユーザー名
-            sepjson['UserName'] = line['6']
+            raw['7'] = line['6']
             #7:日時
-            sepjson['date'] = line['7']    
+            raw['8'] = line['7']    
             #8:その他情報
-            sepjson['9'] = line['8']   
+            raw['9'] = line['8']   
+            
+            sepjson['raw'] = raw
+            self.parseLogdata(raw)
+            '''
             #9:そのほか情報の初期化
             sepjson['ope_flag_deny'] = False
             sepjson['ope_flag_deplog'] = False
             sepjson['ope_flag_depalertpanel']  = False
             sepjson['ope_flag_depdetect']  = False
             sepjson['OpeName_Dict'] = const.NO_DATA
+            '''
             self._logs.append(sepjson)
         
         self.dictinalizeOepName()
@@ -153,10 +175,10 @@ class sepJson:
 if __name__ == '__main__':
     jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
     sepjson = sepJson(raw=jsonpath)
-    #logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
-    #sepjson.dump(logjsonpath) 
+    logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
+    sepjson.dump(logjsonpath) 
     #sepjson = sepJson(path=logjsonpath)
-    #filecopylog = sepjson.filter(ItemName='OpeName',ItemData='ファイルコピー',include=True)
+    filecopylog = sepjson.filter(ItemName='OpeName',ItemData='ファイルコピー',include=True)
     #filecopylog = sepjson.filter(ItemName='AppName',ItemData='svchost',include=True)
 
  
