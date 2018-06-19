@@ -126,6 +126,31 @@ class sepJson:
         #こっちを参照しないように初期化しておく
         self._data['dictinary'] = None
 
+     def filterFromDic(self,ItemName,ItemData,include=True):
+        newJson = sepJson()
+        first = True
+        dictval = const.NO_DATA
+        dictName = ''
+        for log in self._logs:
+            if first != False:
+                #辞書化したキーが存在するか
+                if ItemName in log['dictionary']:
+                    dictval = self._dict.getValue(ItemName,ItemData)
+                    if dictval == const.NO_DATA:
+                        print('Exist dictinary Key:{0},but not exist value'.format(dictName))
+                        return None
+                first = False
+            if log['dictionary'][ItemName] == dictval: 
+                if include == True:
+                    newJson._logs.append(log)
+            else:
+                if include == False:
+                    newJson._logs.append(log)
+        if newJson.size() == 0:
+            print('filter not found match data,ItemName:{0},ItemData:{1}'.format(ItemName,ItemData))
+            return None
+        newJson._dict = self._dict
+        return newJson
     def filter(self,ItemName,ItemData,include=True):
         newJson = sepJson()
         first = True
