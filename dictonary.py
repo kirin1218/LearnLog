@@ -2,7 +2,7 @@
 import os
 import const
 
-class logDictonary:
+class Dictonary:
     def __init__(self,dictdata=None):
         if dictdata is None:
             self._dict = {}

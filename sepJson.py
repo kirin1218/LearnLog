@@ -2,7 +2,7 @@
 import json
 import codecs
 import os
-import logDictonary as ld
+import dictonary as dic
 import const
 import re
 
@@ -10,7 +10,7 @@ class sepJson:
     const.NO_DATA = 0
     def __init__(self,path=None,raw=None):
         self._path = path
-        self._dict = ld.logDictonary()
+        self._dict = dic.Dictonary()
         if self._path is None:
             self._logs = []
             self._data = {}
@@ -33,11 +33,7 @@ class sepJson:
                 ret += connect
             ret+=word
         return ret
-    
-    
-    def dictinalizeOepName(self):
-        for log in self._logs:
-            
+                
     def parseExtention(self,raw):
         extention = {}
         #まずは操作名
@@ -60,19 +56,29 @@ class sepJson:
                 s2.pop(0)
                 ope = self.combine(s2,'-')
 
-
         #文字列を数値化（辞書の作成）する
-        log['OpeName_Dict'] = self._dict.dictinalize(name='OpeName',data=ope)
+        #jopeno = self._dict.dictinalize(name='OpeName',data=ope)
+        return ope,extention
 
     def parseLogdata(self,raw):
         common = {}
-        extention = {}
+        extention = None 
         common['PCName'] = raw['1']
         common['AppName'] = raw['4']
         common['UserName'] = raw['7']
         common['date'] = raw['8']    
-
         common['OpeName'],extention = self.parseExtention(raw)
+
+        return common,extention
+
+    def dictinalize(self,sepjson):
+        logdic = {}
+        #まずは操作名
+        cmn = sepjson['common']
+        logdic['OpeName'] = self._dict.dictinalize('OpeName',cmn['OpeName'])
+
+        return logdic
+
     #csvから変換されただけのjsonファイルを解析用の形式に変換する
     def convert(self,rawdata):
         lines = rawdata['logdata']
@@ -99,7 +105,8 @@ class sepJson:
             raw['9'] = line['8']   
             
             sepjson['raw'] = raw
-            self.parseLogdata(raw)
+            sepjson['common'],sepjson['extention'] = self.parseLogdata(raw)
+            sepjson['dictinary'] = self.dictinalize(sepjson)
             '''
             #9:そのほか情報の初期化
             sepjson['ope_flag_deny'] = False
@@ -110,8 +117,6 @@ class sepJson:
             '''
             self._logs.append(sepjson)
         
-        self.dictinalizeOepName()
-    
     def dump(self,path):
         #辞書データを書き込みデータに代入する
         self._data['dictinary'] = self._dict.get()
@@ -133,15 +138,14 @@ class sepJson:
                     print('sepjson not found item \'{0}\''.format(ItemName))
                     return None
                 #辞書化したキーが存在するか
-                dictName = ItemName + '_Dict'
-                if dictName in log:
+                if ItemName in log['dictionary']:
                     dictval = self._dict.getValue(ItemName,ItemData)
                     if dictval == const.NO_DATA:
                         print('Exist dictinary Key:{0},but not exist value'.format(dictName))
                         return None
                 first = False
             if dictval != const.NO_DATA:
-                if log[dictName] == dictval: 
+                if log['dictionary'][ItemName] == dictval: 
                     if include == True:
                         newJson._logs.append(log)
                 else:
