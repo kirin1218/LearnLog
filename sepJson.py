@@ -2,7 +2,7 @@
 import json
 import codecs
 import os
-import dictonary as dic
+import dictionary as dic
 import const
 import re
 
@@ -10,12 +10,12 @@ class sepJson:
     const.NO_DATA = 0
     def __init__(self,path=None,raw=None):
         self._path = path
-        self._dict = dic.Dictonary()
+        self._dict = dic.Dictionary()
         if self._path is None:
             self._logs = []
             self._data = {}
             self._data['logs'] = self._logs
-            self._data['dictinary'] = None
+            self._data['dictionary'] = None
             if raw is not None:
                 with codecs.open(raw,'r',encoding='utf-8') as f:
                     rawdata = json.load(f)
@@ -24,9 +24,9 @@ class sepJson:
             with codecs.open(self._path,'r',encoding='utf-8') as f:
                 self._data = json.load(f)
                 self._logs = self._data['logs'] 
-                self._dict.set(self._data['dictinary']) 
+                self._dict.set(self._data['dictionary']) 
 
-    def combine(words,connect):
+    def combine(self,words,connect):
         ret = ''
         for word in words:
             if ret != '':
@@ -52,12 +52,12 @@ class sepJson:
             #まずは先頭についているパターンを判定
             if s2[0] == '拒否':
                 extention['ope_flag_deny'] = True
-                print('detect deny flag{0}'.format(ope))
+                #print('detect deny flag{0}'.format(ope))
                 s2.pop(0)
                 ope = self.combine(s2,'-')
 
         #文字列を数値化（辞書の作成）する
-        #jopeno = self._dict.dictinalize(name='OpeName',data=ope)
+        #jopeno = self._dict.dictionalize(name='OpeName',data=ope)
         return ope,extention
 
     def parseLogdata(self,raw):
@@ -71,11 +71,11 @@ class sepJson:
 
         return common,extention
 
-    def dictinalize(self,sepjson):
+    def dictionalize(self,sepjson):
         logdic = {}
         #まずは操作名
         cmn = sepjson['common']
-        logdic['OpeName'] = self._dict.dictinalize('OpeName',cmn['OpeName'])
+        logdic['OpeName'] = self._dict.dictionalize('OpeName',cmn['OpeName'])
 
         return logdic
 
@@ -83,6 +83,9 @@ class sepJson:
     def convert(self,rawdata):
         lines = rawdata['logdata']
         for line in lines:
+            size = len(self._logs)
+            if size%100000 == 0:
+                print('{0}\'s line convert'.format(size))
             raw = {}
             sepjson = {}
             #0:PC名
@@ -106,7 +109,7 @@ class sepJson:
             
             sepjson['raw'] = raw
             sepjson['common'],sepjson['extention'] = self.parseLogdata(raw)
-            sepjson['dictinary'] = self.dictinalize(sepjson)
+            sepjson['dictionary'] = self.dictionalize(sepjson)
             '''
             #9:そのほか情報の初期化
             sepjson['ope_flag_deny'] = False
@@ -119,12 +122,12 @@ class sepJson:
         
     def dump(self,path):
         #辞書データを書き込みデータに代入する
-        self._data['dictinary'] = self._dict.get()
+        self._data['dictionary'] = self._dict.get()
         with codecs.open(path,"w",encoding='utf-8') as f:
             json.dump(self._data, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
             #json.dump(jsondata,f,ensure_ascii=False)
         #こっちを参照しないように初期化しておく
-        self._data['dictinary'] = None
+        self._data['dictionary'] = None
 
      def filterFromDic(self,ItemName,ItemData,include=True):
         newJson = sepJson()
@@ -137,7 +140,7 @@ class sepJson:
                 if ItemName in log['dictionary']:
                     dictval = self._dict.getValue(ItemName,ItemData)
                     if dictval == const.NO_DATA:
-                        print('Exist dictinary Key:{0},but not exist value'.format(dictName))
+                        print('Exist dictionary Key:{0},but not exist value'.format(dictName))
                         return None
                 first = False
             if log['dictionary'][ItemName] == dictval: 
@@ -166,7 +169,7 @@ class sepJson:
                 if ItemName in log['dictionary']:
                     dictval = self._dict.getValue(ItemName,ItemData)
                     if dictval == const.NO_DATA:
-                        print('Exist dictinary Key:{0},but not exist value'.format(dictName))
+                        print('Exist dictionary Key:{0},but not exist value'.format(dictName))
                         return None
                 first = False
             if dictval != const.NO_DATA:
@@ -204,12 +207,23 @@ class sepJson:
             print('don\'t loaded raw file')
 '''
 if __name__ == '__main__':
+    hhmode = True
+    read_seplog_json = True
+    
+    if hhmode == True:
+        jsonpath = 'z:\SePLog\log.json'
+        logjsonpath = 'z:\SePLog\seplog.json'
+    else:
     jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
+        logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
+
+    if read_seplog_json == False:
     sepjson = sepJson(raw=jsonpath)
-    logjsonpath = '.' + os.sep + 'Data' + os.sep + 'seplog.json'
     sepjson.dump(logjsonpath) 
-    #sepjson = sepJson(path=logjsonpath)
-    filecopylog = sepjson.filter(ItemName='OpeName',ItemData='ファイルコピー',include=True)
+    else:
+        sepjson = sepJson(path=logjsonpath)
+
+    filecopylog = sepjson.filterFromDic(ItemName='OpeName',ItemData='ファイルコピー',include=True)
     #filecopylog = sepjson.filter(ItemName='AppName',ItemData='svchost',include=True)
 
  

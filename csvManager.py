@@ -20,6 +20,8 @@ class csvManager:
         stkbuf = '' 
         dquat = False
         while True:
+            if i%10000 == 0:
+                print('{0}/{1} lines parse'.format(i,length))
             data = self._raw[i]
            
             if dquat == True:
@@ -91,8 +93,20 @@ class csvManager:
     
     def open(self):
         self._size = os.path.getsize(self._path)
-        with codecs.open(self._path,"rb",'Shift_jis') as f:
+        #with codecs.open(self._path,"rb",'Shift_jis') as f:
+        #with codecs.open(self._path,"rb",'shift_jisx0213') as f:
+        with codecs.open(self._path,"rb",'cp932',errors='ignore') as f:
             f.seek(0)
+            '''
+            line = f.readline()
+            self._raw = ''
+            while line:
+                try:
+                    line = f.readline()
+                    self._raw += line
+                except UnicodeDecodeError:
+                    print('error')
+                    '''
             self._raw = f.read()
             self.parse()
 
@@ -114,7 +128,7 @@ if __name__ == '__main__':
     path = '.' + os.sep + 'Data' + os.sep + 'log.csv'
     csv = csvManager(path)
     jsonpath = '.' + os.sep + 'Data' + os.sep + 'log.json'
-    jsondata = csv.tojson()
+    jsondata = csv.tojson(name='logdata')
     with codecs.open(jsonpath,"w",encoding='utf-8') as f:
         json.dump(jsondata, f, ensure_ascii=False, indent=4, sort_keys=True, separators=(',', ': '))
         #json.dump(jsondata,f,ensure_ascii=False)
