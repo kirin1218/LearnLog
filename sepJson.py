@@ -5,9 +5,12 @@ import os
 import dictionary as dic
 import const
 import re
-
 class sepJson:
     const.NO_DATA = 0
+    const.FILE_PATH_UNKNOWN = 0
+    const.FILE_PATH_NORMAL = 1
+    const.FILE_PATH_UNC =2
+
     def __init__(self,path=None,raw=None):
         self._path = path
         self._dict = dic.Dictionary()
@@ -34,6 +37,24 @@ class sepJson:
             ret+=word
         return ret
                 
+    def parseFilepath(self,i_path,o_dir,o_file,o_ext,o_root):
+        pos = i_path.rfind('\\')
+        o_file = i_path[pos+1:]
+        o_dir = i_path[:pos]
+        pos = o_file.rfind('.')
+        o_ext = o_file[pos+1:]
+        if o_dir[0] == '\\' and o_dir[1] == '\\':
+            o_type = const.FILE_PATH_UNC
+            npos = o_dir[2:].find('\\')
+            o_root =  o_dir[2:npos-1]
+        elif o_dir[1] == ':' and o_dir[2] == '\\':
+            o_type = const.FILE_PATH_NORMAL
+            o_root = o_dir[0]
+        else:
+            o_type = const.FILE_PATH_UNKNOWN
+            o_root = 'UNKNOWN'
+            return o_type 
+
     def parseExtention(self,raw):
         extention = {}
         #まずは操作名
@@ -46,9 +67,7 @@ class sepJson:
             ver = s1[1].split('>')[0]
             extention['sepinst_ver'] = ver
 
-        #拒否-印刷やファイル書き込み(DeP)-警告パネルなどちょくちょく出てくる
-        s2 = ope.split('-')
-        if len(s2) > 1:
+        #拒否-印刷やファイル書き込み(DeP)-警告パネルなどちょくちょく出てくる s2 = ope.split('-') if len(s2) > 1:
             #まずは先頭についているパターンを判定
             if s2[0] == '拒否':
                 extention['ope_flag_deny'] = True
@@ -56,8 +75,12 @@ class sepJson:
                 s2.pop(0)
                 ope = self.combine(s2,'-')
 
-        #文字列を数値化（辞書の作成）する
-        #jopeno = self._dict.dictionalize(name='OpeName',data=ope)
+        if ope == 'ファイルコピー':
+            src_file = raw['2']
+            src_dir = raw['3']
+            pathtype = self.parseFilepath(src_dir+src_file,dir,file,ext,root)
+            dest_path = raw['9']
+            pathtype = self.parseFilepath(dest_path,dir,file,ext,root)
         return ope,extention
 
     def parseLogdata(self,raw):
