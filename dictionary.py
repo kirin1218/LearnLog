@@ -2,7 +2,7 @@
 import os
 import const
 
-class Dictonary:
+class Dictionary:
     def __init__(self,dictdata=None):
         if dictdata is None:
             self._dict = {}
@@ -22,7 +22,7 @@ class Dictonary:
             return self._dict[key]['names']['NO_DATA']
         return None
         
-    def dictinalize(self, name, data ):
+    def dictionalize(self, name, data ):
         if not name in self._dict:
             self._dict[name] = {}
             self._dict[name]['names'] = {}
